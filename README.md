@@ -33,3 +33,7 @@ python -m http.server 8080 --directory dist
 ## 发布
 
 可将 `dist/` 内的完整内容部署到支持静态文件的服务器或 GitHub Pages。请保留章节目录和相对路径。`.openai/hosting.json` 是本次 Sites 发布的站点配置；自行迁移静态文件时不需要它。
+
+本仓库已包含 `.github/workflows/pages.yml`：推送到 `main` 或在 Actions 中手动运行后，会将 `dist/` 作为静态网站发布，无需安装依赖或执行构建。首次使用时，在仓库 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**。发布结果及网址可在 Actions 的部署记录或 Settings → Pages 中查看。
+
+课程页、学习工具和实验页面均使用相对路径，支持 GitHub 项目网站的 `https://用户名.github.io/仓库名/` 地址。`dist/.nojekyll` 声明网站直接提供静态文件；工作流不运行 Jekyll，也不会发布本目录中的文档、测试或 `.openai/` 配置。
