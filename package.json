@@ -1,0 +1,11 @@
+{
+  "name": "vis-course-learning",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "python -m http.server 8080 --directory dist",
+    "index": "python scripts/prepare.py",
+    "check": "python scripts/verify.py"
+  }
+}

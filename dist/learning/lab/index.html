@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>时序图表联动实验 · 信息可视化课程</title>
+  <link rel="stylesheet" href="../../lesson-05/styles.css">
+  <link rel="stylesheet" href="./lab.css">
+  <link rel="stylesheet" href="../tools.css">
+</head>
+<body>
+  <a class="skip-link" href="#lab-main">跳到实验内容</a>
+  <nav class="course-topbar" aria-label="课程导航">
+    <a class="brand" href="../../"><span class="back">←</span><span>课程门户</span></a>
+    <ul class="tabs">
+      <li><a href="../../">课程门户</a></li>
+      <li><a href="../../lesson-01/">第 1 章 · 数据</a></li>
+      <li><a href="../../lesson-02/">第 2 章 · 数据可视化流程</a></li>
+      <li><a href="../../lesson-03/">第 3 章 · 色彩专题</a></li>
+      <li><a href="../../lesson-04/">第 4 章 · 低维可视化</a></li>
+      <li><a href="../../lesson-05/" class="current">第 5 章 · 时序可视化</a></li>
+    </ul>
+  </nav>
+  <header class="lesson-header lab-header">
+    <div>
+      <p class="lab-eyebrow">第 5 章 · 拓展实验</p>
+      <h1>同一份数据，三种时间视角</h1>
+      <p class="subtitle">2024 年每日最高温 · 折线图 × 日历热图 × 月周期螺旋</p>
+    </div>
+    <a class="header-link" href="../../lesson-05/">返回第 5 章 →</a>
+  </header>
+  <main id="lab-main" class="lab-main">
+    <section class="lab-intro" aria-labelledby="intro-title">
+      <h2 id="intro-title">把“趋势”和“周期”放在一起看</h2>
+      <p>在任意图中点选一天，另外两图同步定位；在折线图上拖动，或设置起止日期，三图同步突出该区间，并更新统计和数据表。区间用于筛选统计，点选日期用于定位。</p>
+      <p class="source-note">数据沿用课程第 5 章的 <a href="../../lesson-05/data/weather_2024.csv" download>weather_2024.csv</a>，指标为 <code>temp_max</code>（每日最高温，℃）。原文件未标注观测地点与数据来源，仅作课程教学示例，不作为真实城市天气记录。</p>
+    </section>
+
+    <div id="lab-status" class="lab-status" role="status" aria-live="polite">正在读取课程数据与图表组件…</div>
+
+    <div id="lab-workspace" hidden>
+      <section class="lab-controls lab-card" aria-labelledby="range-title">
+        <div class="section-heading">
+          <div><h2 id="range-title">选择观察区间</h2><p>起止日期均计入区间；色标始终使用全年范围，便于对比。</p></div>
+          <span id="data-count" class="data-badge"></span>
+        </div>
+        <form id="range-form" class="range-form">
+          <label for="start-date">开始日期<input id="start-date" type="date" required></label>
+          <label for="end-date">结束日期<input id="end-date" type="date" required></label>
+          <button class="lab-button primary" type="submit">应用日期范围</button>
+          <button id="reset-range" class="lab-button" type="button">重置 / 查看全年</button>
+          <button id="download-csv" class="lab-button" type="button">下载所选 CSV</button>
+        </form>
+        <p id="range-error" class="range-error" role="alert" hidden></p>
+        <div id="range-summary" class="range-summary" aria-live="polite"></div>
+        <div class="lab-stats" aria-label="所选区间统计">
+          <div><span>区间天数 / 有效温度记录</span><strong id="stat-count">—</strong></div>
+          <div><span>所选日最高温均值</span><strong id="stat-mean">—</strong></div>
+          <div><span>所选数据最小值</span><strong id="stat-min">—</strong></div>
+          <div><span>所选数据最大值</span><strong id="stat-max">—</strong></div>
+        </div>
+      </section>
+
+      <section class="focus-readout" aria-label="同步定位日期" aria-live="polite">
+        <span class="focus-dot" aria-hidden="true"></span>
+        <div><strong id="focus-date">点选图中的一天，开始对照</strong><p id="focus-value">图中的蓝色轮廓表示当前定位日期。</p></div>
+      </section>
+
+      <section class="lab-card line-card" aria-labelledby="line-title">
+        <div class="section-heading"><div><h2 id="line-title"><span class="chart-number">01</span> 折线图 · 看整体趋势</h2><p>拖动图内选取区间，点击定位单日。也可先聚焦图形，用 ← / → 逐日移动。</p></div><a href="../../lesson-05/#ch-5-2">复习 5.2 →</a></div>
+        <div class="chart-scroll"><svg id="line-chart" class="lab-svg" viewBox="0 0 1120 285" role="group" tabindex="0" aria-label="2024年每日最高温折线图。左右方向键切换日期，Home和End跳到年初年末。"></svg></div>
+      </section>
+
+      <div class="secondary-charts">
+        <section class="lab-card calendar-card" aria-labelledby="calendar-title">
+          <div class="section-heading"><div><h2 id="calendar-title"><span class="chart-number">02</span> 日历热图 · 看日期分布</h2><p>每格一天，周一在最上行；查找某天、某周的高温与低温。</p></div><a href="../../lesson-05/#ch-5-3">复习 5.3 →</a></div>
+          <div class="chart-scroll"><svg id="calendar-chart" class="lab-svg" viewBox="0 0 1010 185" role="group" aria-label="2024年日历热图。可聚焦日期，使用方向键移动，回车选择。"></svg></div>
+          <div id="color-legend" class="color-legend" aria-label="全年温度色标"></div>
+          <p class="chart-note">2024 年是闰年，含 2 月 29 日，共 366 天。灰色斜纹表示缺失值；区间外日期淡化，当前定位日期加蓝框。</p>
+          <div class="reading-tip"><strong>试着观察</strong><p>先框选夏季，再点一个高温日：同一日期在折线中是一个点，在日历中是一格，在螺旋中位于某一圈。</p></div>
+        </section>
+        <section class="lab-card spiral-card" aria-labelledby="spiral-title">
+          <div class="section-heading"><div><h2 id="spiral-title"><span class="chart-number">03</span> 螺旋图 · 比较月内变化</h2><p>由内向外推进，每一圈对应一个自然月。</p></div><a href="../../lesson-05/#ch-5-4">复习 5.4 →</a></div>
+          <svg id="spiral-chart" class="lab-svg spiral-svg" viewBox="0 0 440 425" role="group" aria-label="月周期温度螺旋图。每圈一个自然月，由内向外从一月到十二月。可使用方向键移动日期并用回车选择。"></svg>
+          <details class="spiral-definition"><summary>这张螺旋图如何定义周期？</summary><p>设月份编号 m 从 0 开始，日期为 d，当月天数为 D。令 u = m + (d − 1) / D，角度 θ = 2πu − π/2，半径 r = 24 + 13u。</p><p>因此每转一圈正好经过一个自然月。同一方向表示相近的“月内进度”，不表示同一星期；月份天数不同，不能用等角距离推断相同天数。</p></details>
+        </section>
+      </div>
+
+      <section class="lab-card table-card" aria-labelledby="table-title">
+        <div class="section-heading"><div><h2 id="table-title">所选区间数据</h2><p>点击日期按钮可用键盘完成同步定位。缺失值保留为空，统计时排除。</p></div><span id="table-count" class="data-badge"></span></div>
+        <div class="data-table-scroll"><table class="lab-data-table"><thead><tr><th scope="col">日期</th><th scope="col">星期</th><th scope="col">每日最高温（℃）</th><th scope="col">降水量（mm）</th></tr></thead><tbody id="data-rows"></tbody></table></div>
+      </section>
+      <section class="lab-takeaway"><h2>三个视角，回答三个问题</h2><p><strong>折线图</strong>更容易看出温度随时间升降的趋势；<strong>日历热图</strong>保留真实日期与星期位置；<strong>螺旋图</strong>把月内进度放在相近方向，便于比较不同月份。三图沿用同一份数据与同一色标，切换视角时可以追踪同一天。</p></section>
+    </div>
+  </main>
+  <footer class="lab-footer"><p>信息可视化课程 · 时序图表联动实验</p><a href="../../">返回课程门户</a><span aria-hidden="true"> · </span><a href="../../lesson-05/">返回第 5 章</a></footer>
+  <script type="module" src="./lab.js"></script>
+  <script type="module" src="../tools.js"></script>
+</body>
+</html>
