@@ -1,0 +1,16 @@
+{
+  "date": "2026-10-21",
+  "normalization": "LF; injected learning references excluded from HTML",
+  "files": {
+    "lesson-05/lesson.js": {
+      "upstream_sha256": "793a522e9a0f170277f213224cb1d79a54440beaa8481181c998d1367b8b6194",
+      "sha256": "414150ac9f529f90a3cf03252f91e8fb208cac79686e9d6b42e194a6dbf91238",
+      "reason": "用户要求修复原日历提示叠加；统一5.3/5.4/5.5提示框生命周期，修正天气日期键与缺失值处理。"
+    },
+    "lesson-05/index.html": {
+      "upstream_sha256": "e0c23bc98e86a4525ea92c81aa9b6f3d11e5654e531846f1af1253ad748af226",
+      "sha256": "aa4c0ee4bf192e64688ba73dd7c10242f571f64c4cbeaad08a9f168cf77d03ed",
+      "reason": "更新第五章脚本缓存版本，确保加载已修复的提示框代码。"
+    }
+  }
+}

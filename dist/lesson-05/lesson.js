@@ -11,6 +11,41 @@ import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 
 window.DEMOS = window.DEMOS || {};
 
+// A single page-owned tooltip must be removed from the same place it was added.
+let lessonTooltip = null;
+function hideLessonTooltip() {
+  lessonTooltip?.remove();
+  lessonTooltip = null;
+}
+function showLessonTooltip(event, text) {
+  if (!lessonTooltip?.isConnected) {
+    lessonTooltip = document.createElement("div");
+    lessonTooltip.className = "ts-tip";
+    lessonTooltip.setAttribute("role", "tooltip");
+    lessonTooltip.style.cssText = "position:absolute;background:#1e293b;color:white;padding:4px 8px;border-radius:3px;font-size:11px;pointer-events:none;z-index:1000;white-space:pre-line;max-width:240px;";
+    document.body.appendChild(lessonTooltip);
+  }
+  lessonTooltip.textContent = text;
+  lessonTooltip.style.left = (event.pageX + 10) + "px";
+  lessonTooltip.style.top = (event.pageY - 24) + "px";
+}
+window.addEventListener("scroll", hideLessonTooltip, { capture: true, passive: true });
+window.addEventListener("blur", hideLessonTooltip);
+window.addEventListener("pagehide", hideLessonTooltip);
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") hideLessonTooltip();
+});
+
+// Keep ISO date keys as strings: autoType turns them into Date objects.
+function parseWeatherRow(row) {
+  const raw = row.temp_max?.trim() ?? "";
+  const temperature = Number(raw);
+  return {
+    date: row.date?.trim() ?? "",
+    temp_max: raw !== "" && Number.isFinite(temperature) ? temperature : null
+  };
+}
+
 
 // ============================================================
 // 统一章节导航 + Tab 切换 + 自动渲染 demo（patched by patch_lesson_js.py）
@@ -32,6 +67,7 @@ function __renderAllDemos() {
 }
 function __activateChapter(id) {
   if (!id) return;
+  hideLessonTooltip();
   document.querySelectorAll(".chapter-nav a[data-chapter]").forEach(l => {
     l.classList.toggle("active", l.dataset.chapter === id);
   });
@@ -64,6 +100,7 @@ function __bindLessonNav() {
   // Tab 按钮
   document.querySelectorAll(".chapter .tab-btn").forEach(btn => {
     btn.addEventListener("click", () => {
+      hideLessonTooltip();
       const chapter = btn.closest(".chapter");
       if (!chapter) return;
       const tab = btn.dataset.tab;
@@ -280,7 +317,7 @@ window.DEMOS["d-5-2"] = async function (mount) {
 // ⭐ d-5-3 · 日历热图（5.3）
 // =========================================
 window.DEMOS["d-5-3"] = async function (mount) {
-  const dataRaw = await d3.csv('./data/weather_2024.csv', d3.autoType);
+  const dataRaw = await d3.csv('./data/weather_2024.csv', parseWeatherRow);
   const byKey = new Map(dataRaw.map(d => [d.date, d.temp_max]));
 
   const year = 2024;
@@ -289,7 +326,7 @@ window.DEMOS["d-5-3"] = async function (mount) {
 
   const days = d3.timeDay.range(start, end).map(d => ({
     date: d,
-    value: byKey.get(d3.timeFormat('%Y-%m-%d')(d)) ?? 0
+    value: byKey.get(d3.timeFormat('%Y-%m-%d')(d)) ?? null
   }));
 
   const colorScale = d3.scaleSequential(d3.interpolateRdYlBu).domain([30, -5]);
@@ -331,9 +368,11 @@ window.DEMOS["d-5-3"] = async function (mount) {
   const svg = d3.select(mount.querySelector("#cal"));
   const sel = mount.querySelector("#cmap");
   const legend = mount.querySelector("#cal-legend");
+  svg.on("mouseleave.tooltip", hideLessonTooltip);
   let g;  // 修复 g is not defined bug · 2026-09-09
 
   function render() {
+    hideLessonTooltip();
     svg.selectAll("*").remove();
     const interp = d3['interpolate' + sel.value];
     colorScale.interpolator(interp);
@@ -347,14 +386,14 @@ window.DEMOS["d-5-3"] = async function (mount) {
       .attr("x", d => weekColSunday(d.date) * cellSize)
       .attr("y", d => dayIndexSunday(d.date) * cellSize)
       .attr("rx", 1.5).attr("ry", 1.5)
-      .attr("fill", d => colorScale(d.value))
+      .attr("fill", d => d.value == null ? "#e2e8f0" : colorScale(d.value))
       .on("mouseover", function (event, d) {
         d3.select(this).attr("stroke", "#1e293b").attr("stroke-width", 1.5);
-        showTip(event, `${d3.timeFormat("%Y-%m-%d")(d.date)} ${d.value.toFixed(1)}°C`);
+        showLessonTooltip(event, `${d3.timeFormat("%Y-%m-%d")(d.date)} ${d.value == null ? "缺失数据" : d.value.toFixed(1) + "°C"}`);
       })
       .on("mouseout", function () {
         d3.select(this).attr("stroke", null);
-        hideTip();
+        hideLessonTooltip();
       });
 
     g.selectAll("line.month-boundary")
@@ -411,23 +450,6 @@ window.DEMOS["d-5-3"] = async function (mount) {
     }
   }
 
-  function showTip(event, text) {
-    let tip = mount.querySelector(".ts-tip");
-    if (!tip) {
-      tip = document.createElement("div");
-      tip.className = "ts-tip";
-      tip.style.cssText = "position:absolute;background:#1e293b;color:white;padding:4px 8px;border-radius:3px;font-size:11px;pointer-events:none;z-index:1000;";
-      document.body.appendChild(tip);
-    }
-    tip.textContent = text;
-    tip.style.left = (event.pageX + 10) + "px";
-    tip.style.top  = (event.pageY - 24) + "px";
-  }
-  function hideTip() {
-    const tip = mount.querySelector(".ts-tip");
-    if (tip) tip.remove();
-  }
-
   sel.addEventListener("change", render);
   render();
 };
@@ -436,7 +458,7 @@ window.DEMOS["d-5-3"] = async function (mount) {
 // ⭐ d-5-4 · 阿基米德螺旋（5.4）
 // =========================================
 window.DEMOS["d-5-4"] = async function (mount) {
-  const dataRaw = await d3.csv('./data/weather_2024.csv', d3.autoType);
+  const dataRaw = await d3.csv('./data/weather_2024.csv', parseWeatherRow);
   const byKey = new Map(dataRaw.map(d => [d.date, d.temp_max]));
   const year = 2024;
   const start = new Date(year, 0, 1);
@@ -476,8 +498,10 @@ window.DEMOS["d-5-4"] = async function (mount) {
 
   const svg = d3.select(mount.querySelector("#spiral-svg"));
   const weekSel = mount.querySelector("#weekstart");
+  svg.on("mouseleave.tooltip", hideLessonTooltip);
 
   function render() {
+    hideLessonTooltip();
     svg.selectAll("*").remove();
     theta = (startRadius - 0) / b;
     const firstDayOfWeek = +weekSel.value;
@@ -513,11 +537,11 @@ window.DEMOS["d-5-4"] = async function (mount) {
       .attr("stroke", "#fff").attr("stroke-width", 0.5)
       .on("mouseover", function (event, d) {
         d3.select(this).attr("stroke", "#1e293b").attr("stroke-width", 1.5);
-        showTip(event, `${d3.timeFormat('%Y-%m-%d')(d.date)}: ${d.value?.toFixed(1) ?? '-'}°C`);
+        showLessonTooltip(event, `${d3.timeFormat('%Y-%m-%d')(d.date)}: ${d.value == null ? "缺失数据" : d.value.toFixed(1) + "°C"}`);
       })
       .on("mouseout", function () {
         d3.select(this).attr("stroke", "#fff").attr("stroke-width", 0.5);
-        hideTip();
+        hideLessonTooltip();
       });
 
     const months = d3.timeMonth.range(start, end);
@@ -531,23 +555,6 @@ window.DEMOS["d-5-4"] = async function (mount) {
       .attr("y", d => pos(theta).r * Math.sin(theta))
       .style("font-size", "10px").style("fill", "#475569")
       .text(d => d3.timeFormat("%b")(d));
-  }
-
-  function showTip(event, text) {
-    let tip = mount.querySelector(".ts-tip");
-    if (!tip) {
-      tip = document.createElement("div");
-      tip.className = "ts-tip";
-      tip.style.cssText = "position:absolute;background:#1e293b;color:white;padding:4px 8px;border-radius:3px;font-size:11px;pointer-events:none;z-index:1000;";
-      document.body.appendChild(tip);
-    }
-    tip.textContent = text;
-    tip.style.left = (event.pageX + 10) + "px";
-    tip.style.top  = (event.pageY - 24) + "px";
-  }
-  function hideTip() {
-    const tip = mount.querySelector(".ts-tip");
-    if (tip) tip.remove();
   }
 
   svg.attr("viewBox", `${-M.l} ${-M.t} ${W} ${H}`);
@@ -612,8 +619,10 @@ window.DEMOS["d-5-5"] = async function (mount) {
   const alphaInput = mount.querySelector("#alpha");
   const alphaReadout = mount.querySelector("#alpha-readout");
   const note = mount.querySelector("#storyline-note");
+  svg.on("mouseleave.tooltip", hideLessonTooltip);
 
   function render() {
+    hideLessonTooltip();
     const alpha = +alphaInput.value;
     alphaReadout.textContent = alpha.toFixed(1);
     svg.selectAll("*").remove();
@@ -656,8 +665,8 @@ window.DEMOS["d-5-5"] = async function (mount) {
       const ey = yScale(ev.y);
       const grp = eventLayer.append("g").attr("class", "event")
         .style("cursor", "pointer")
-        .on("mouseenter", (e) => showTip(e, `${ev.name}\n${ev.desc}`))
-        .on("mouseleave", () => hideTip());
+        .on("mouseenter", (e) => showLessonTooltip(e, `${ev.name}\n${ev.desc}`))
+        .on("mouseleave", () => hideLessonTooltip());
       grp.append("circle")
         .attr("cx", ex).attr("cy", ey).attr("r", 18)
         .attr("fill", "rgba(220, 38, 38, 0.15)").attr("stroke", "none");
@@ -670,23 +679,6 @@ window.DEMOS["d-5-5"] = async function (mount) {
         .attr("font-size", "10").attr("font-weight", 600).attr("fill", "#cc0000")
         .text(ev.name);
     });
-  }
-
-  function showTip(event, text) {
-    let tip = mount.querySelector(".ts-tip");
-    if (!tip) {
-      tip = document.createElement("div");
-      tip.className = "ts-tip";
-      tip.style.cssText = "position:absolute;background:#1e293b;color:white;padding:6px 10px;border-radius:4px;font-size:11px;pointer-events:none;z-index:1000;white-space:pre-line;max-width:200px;";
-      document.body.appendChild(tip);
-    }
-    tip.textContent = text;
-    tip.style.left = (event.pageX + 12) + "px";
-    tip.style.top  = (event.pageY - 12) + "px";
-  }
-  function hideTip() {
-    const tip = mount.querySelector(".ts-tip");
-    if (tip) tip.remove();
   }
 
   alphaInput.addEventListener("input", render);

@@ -27,6 +27,7 @@ python -m http.server 8080 --directory dist
 - `scripts/prepare.py`：从原课程正文生成 27 个小节的搜索索引，并在六个页面注入新增入口。
 - `scripts/verify.py`：检查原站文件是否完整保留、索引锚点和 JavaScript 语法。
 - `scripts/upstream-hashes.json`：导入原站时记录的文件摘要，供核对使用。
+- `scripts/approved-fixes.json`：保留原始摘要，单独记录后续错误修复的原因和文件摘要。
 
 运行 `python scripts/prepare.py` 可刷新索引；运行 `python scripts/verify.py` 可执行静态核对（语法检查需要 Node.js）。
 
